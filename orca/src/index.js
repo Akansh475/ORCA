@@ -3,9 +3,13 @@ const { createFile } = require('./tools/createFile');
 const { readFile } = require('./tools/readFile');
 const { listDir } = require('./tools/listDir');
 const { runCommand } = require('./tools/runCommand');
+const { pickModel } = require('./llm/pickModel');
 
-console.log(runCommand('echo Hello ORCA'));
-console.log(runCommand('someinvalidcommand123'));
+console.log(pickModel('build me a login page'));
+console.log(pickModel('organize my downloads folder'));
+
+// console.log(runCommand('echo Hello ORCA'));
+// console.log(runCommand('someinvalidcommand123'));
 
 // console.log(listDir('./test-folder'));
 // console.log(listDir('./no-such-folder')); // should say doesn't exist
