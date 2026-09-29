@@ -4,9 +4,15 @@ const { readFile } = require('./tools/readFile');
 const { listDir } = require('./tools/listDir');
 const { runCommand } = require('./tools/runCommand');
 const { pickModel } = require('./llm/pickModel');
+const { callOllama } = require('./llm/callOllama');
 
-console.log(pickModel('build me a login page'));
-console.log(pickModel('organize my downloads folder'));
+
+callOllama('llama3.1', 'Create a folder called notes').then(console.log);
+
+// callOllama('llama3.1', 'Say hello in one sentence.').then(console.log);
+
+// console.log(pickModel('build me a login page'));
+// console.log(pickModel('organize my downloads folder'));
 
 // console.log(runCommand('echo Hello ORCA'));
 // console.log(runCommand('someinvalidcommand123'));
