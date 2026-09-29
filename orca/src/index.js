@@ -1,6 +1,10 @@
 const { createFolder } = require('./tools/createFolder');
 const { createFile } = require('./tools/createFile');
 const { readFile } = require('./tools/readFile');
+const { listDir } = require('./tools/listDir');
+
+console.log(listDir('./test-folder'));
+console.log(listDir('./no-such-folder')); // should say doesn't exist
 
 console.log(readFile('./test-folder/hello.txt'));
 console.log(readFile('./test-folder/nofile.txt')); // should say doesn't exist
