@@ -1,14 +1,3 @@
-const { callOllama } = require('./llm/callOllama');
-const { pickModel } = require('./llm/pickModel');
-const { executeTool } = require('./agent/executeTool');
+const { runAgent } = require('./agent/runAgent');
 
-async function run(instruction) {
-  const model = pickModel(instruction);
-  const rawResponse = await callOllama(model, instruction);
-  const decision = JSON.parse(rawResponse);
-  const result = executeTool(decision);
-  console.log('Decision:', decision);
-  console.log('Result:', result);
-}
-
-run('Create a folder called notes');
+runAgent('Create a folder called blog and add an index.html file inside it with the text Hello World');
