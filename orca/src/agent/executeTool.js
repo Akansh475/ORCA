@@ -3,8 +3,10 @@ const { createFile } = require('../tools/createFile');
 const { readFile } = require('../tools/readFile');
 const { listDir } = require('../tools/listDir');
 const { runCommand } = require('../tools/runCommand');
+const { searchFiles } = require('../tools/searchFiles');
+const { confirmAction } = require('./confirmAction');
 
-function executeTool(decision) {
+async function executeTool(decision) {
   const { tool, args } = decision;
 
   switch (tool) {
@@ -16,8 +18,15 @@ function executeTool(decision) {
       return readFile(args.path);
     case 'listDir':
       return listDir(args.path);
-    case 'runCommand':
+    case 'searchFiles':
+      return searchFiles(args.path, args.keyword);
+    case 'runCommand': {
+      const confirmed = await confirmAction(`ORCA wants to run: "${args.command}".`);
+      if (!confirmed) {
+        return { success: false, message: 'Command cancelled by user.' };
+      }
       return runCommand(args.command);
+    }
     case 'done':
       return { success: true, message: decision.message };
     default:
