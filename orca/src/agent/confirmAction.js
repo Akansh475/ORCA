@@ -7,9 +7,10 @@ function confirmAction(message) {
   });
 
   return new Promise((resolve) => {
-    rl.question(`${message} Type "yes" to proceed: `, (answer) => {
+    rl.question(`${message} Type "yes" or "y" to proceed: `, (answer) => {
       rl.close();
-      resolve(answer.trim().toLowerCase() === 'yes');
+      const normalized = answer.trim().toLowerCase();
+      resolve(normalized === 'yes' || normalized === 'y');
     });
   });
 }

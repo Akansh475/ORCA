@@ -1,7 +1,7 @@
 const fs = require('fs');
 
-function createFile(path, content = '') {
-  if (fs.existsSync(path)) {
+function createFile(path, content = '', overwrite = false) {
+  if (fs.existsSync(path) && !overwrite) {
     return { success: false, message: `File already exists: ${path}` };
   }
   fs.writeFileSync(path, content);

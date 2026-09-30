@@ -6,14 +6,25 @@ const { runCommand } = require('../tools/runCommand');
 const { searchFiles } = require('../tools/searchFiles');
 const { confirmAction } = require('./confirmAction');
 
+class UserCancelledError extends Error {}
+
 async function executeTool(decision) {
   const { tool, args } = decision;
 
   switch (tool) {
     case 'createFolder':
       return createFolder(args.path);
-    case 'createFile':
-      return createFile(args.path, args.content);
+    case 'createFile': {
+      const result = createFile(args.path, args.content);
+      if (!result.success && result.message.includes('already exists')) {
+        const confirmed = await confirmAction(`ORCA wants to overwrite existing file: "${args.path}".`);
+        if (!confirmed) {
+          throw new UserCancelledError('Overwrite cancelled by user.');
+        }
+        return createFile(args.path, args.content, true);
+      }
+      return result;
+    }
     case 'readFile':
       return readFile(args.path);
     case 'listDir':
@@ -23,7 +34,7 @@ async function executeTool(decision) {
     case 'runCommand': {
       const confirmed = await confirmAction(`ORCA wants to run: "${args.command}".`);
       if (!confirmed) {
-        return { success: false, message: 'Command cancelled by user.' };
+        throw new UserCancelledError('Command cancelled by user.');
       }
       return runCommand(args.command);
     }
@@ -34,4 +45,4 @@ async function executeTool(decision) {
   }
 }
 
-module.exports = { executeTool };
+module.exports = { executeTool, UserCancelledError };

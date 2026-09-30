@@ -1,6 +1,6 @@
 const { callOllama } = require('../llm/callOllama');
 const { pickModel } = require('../llm/pickModel');
-const { executeTool } = require('./executeTool');
+const { executeTool, UserCancelledError } = require('./executeTool');
 
 function extractFirstJSON(text) {
   let depth = 0;
@@ -36,10 +36,17 @@ async function runAgent(instruction) {
       break;
     }
 
-    const result = await executeTool(decision);
-    console.log('Result:', result);
-
-    messages.push({ role: 'user', content: `Tool result: ${JSON.stringify(result)}` });
+    try {
+      const result = await executeTool(decision);
+      console.log('Result:', result);
+      messages.push({ role: 'user', content: `Tool result: ${JSON.stringify(result)}` });
+    } catch (err) {
+      if (err instanceof UserCancelledError) {
+        console.log('Stopped:', err.message);
+        break;
+      }
+      throw err;
+    }
   }
 }
 
