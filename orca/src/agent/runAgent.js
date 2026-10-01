@@ -22,13 +22,32 @@ function extractFirstJSON(text) {
 async function runAgent(instruction) {
   const model = pickModel(instruction);
   const messages = [{ role: 'user', content: instruction }];
+  const MAX_RETRIES = 3;
+  let retries = 0;
 
   while (true) {
     const rawResponse = await callOllama(model, messages);
     messages.push({ role: 'assistant', content: rawResponse });
 
     const jsonText = extractFirstJSON(rawResponse);
-    const decision = JSON.parse(jsonText);
+    let decision;
+    try {
+      if (!jsonText) throw new Error('No JSON object found in response.');
+      decision = JSON.parse(jsonText);
+    } catch (err) {
+      retries++;
+      if (retries > MAX_RETRIES) {
+        console.log('Stopped: too many invalid responses from the model.');
+        break;
+      }
+      console.log('Invalid JSON from model, asking it to retry...');
+      messages.push({
+        role: 'user',
+        content: `Your last response was not valid JSON (${err.message}). Respond again with ONLY a single valid JSON object in the required format.`
+      });
+      continue;
+    }
+
     console.log('Decision:', decision);
 
     if (decision.tool === 'done') {

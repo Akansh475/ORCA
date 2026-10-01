@@ -39,14 +39,15 @@ async function executeTool(decision) {
     case 'searchFiles':
       return searchFiles(args.path, args.keyword);
     case 'runCommand': {
+      const cwd = args.cwd || '.';
       if (isSafeReadOnly(args.command)) {
-        return runCommand(args.command);
+        return runCommand(args.command, cwd);
       }
-      const confirmed = await confirmAction(`ORCA wants to run: "${args.command}".`);
+      const confirmed = await confirmAction(`ORCA wants to run: "${args.command}" in "${cwd}".`);
       if (!confirmed) {
         throw new UserCancelledError('Command cancelled by user.');
       }
-      return runCommand(args.command);
+      return runCommand(args.command, cwd);
     }
     case 'done':
       return { success: true, message: decision.message };

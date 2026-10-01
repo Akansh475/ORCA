@@ -1,6 +1,7 @@
 const { runAgent } = require('./agent/runAgent');
-
-runAgent('Open the Spotify app');
+runAgent('Create a basic Express server in a folder called api2, with a GET route at / that returns Hello World, and install dependencies properly');
+// runAgent('Create a basic Express server in a folder called api, with a GET route at / that returns Hello World');
+// runAgent('Open the Spotify app');
 // runAgent('List running processes');
 // runAgent('Check my disk space');
 
