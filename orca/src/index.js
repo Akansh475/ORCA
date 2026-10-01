@@ -1,7 +1,7 @@
 const { runAgent } = require('./agent/runAgent');
 
-
-runAgent('List running processes');
+runAgent('Open the Spotify app');
+// runAgent('List running processes');
 // runAgent('Check my disk space');
 
 // runAgent('Create a file at ./blog/index.html with the content Updated Content');
