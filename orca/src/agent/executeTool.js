@@ -8,6 +8,13 @@ const { confirmAction } = require('./confirmAction');
 
 class UserCancelledError extends Error {}
 
+const SAFE_READONLY_PREFIXES = ['df', 'ps', 'ls', 'whoami', 'pwd', 'date', 'uptime'];
+
+function isSafeReadOnly(command) {
+  const firstWord = command.trim().split(' ')[0];
+  return SAFE_READONLY_PREFIXES.includes(firstWord);
+}
+
 async function executeTool(decision) {
   const { tool, args } = decision;
 
@@ -32,6 +39,9 @@ async function executeTool(decision) {
     case 'searchFiles':
       return searchFiles(args.path, args.keyword);
     case 'runCommand': {
+      if (isSafeReadOnly(args.command)) {
+        return runCommand(args.command);
+      }
       const confirmed = await confirmAction(`ORCA wants to run: "${args.command}".`);
       if (!confirmed) {
         throw new UserCancelledError('Command cancelled by user.');

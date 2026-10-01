@@ -1,6 +1,8 @@
 const { runAgent } = require('./agent/runAgent');
 
-runAgent('Check my disk space');
+
+runAgent('List running processes');
+// runAgent('Check my disk space');
 
 // runAgent('Create a file at ./blog/index.html with the content Updated Content');
 // runAgent('Run the command: echo Confirmed Test');
