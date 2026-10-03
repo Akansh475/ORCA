@@ -5,6 +5,8 @@ const { listDir } = require('../tools/listDir');
 const { runCommand } = require('../tools/runCommand');
 const { searchFiles } = require('../tools/searchFiles');
 const { verifyServer } = require('../tools/verifyServer');
+const { deleteFile } = require('../tools/deleteFile');
+const { deleteFolder } = require('../tools/deleteFolder');
 const { confirmAction } = require('./confirmAction');
 
 class UserCancelledError extends Error {}
@@ -41,6 +43,20 @@ async function executeTool(decision) {
       return searchFiles(args.path, args.keyword);
     case 'verifyServer':
       return verifyServer(args.projectPath, args.entryFile, args.port, args.route);
+    case 'deleteFile': {
+      const confirmed = await confirmAction(`ORCA wants to DELETE file: "${args.path}". This cannot be undone.`);
+      if (!confirmed) {
+        throw new UserCancelledError('File deletion cancelled by user.');
+      }
+      return deleteFile(args.path);
+    }
+    case 'deleteFolder': {
+      const confirmed = await confirmAction(`ORCA wants to DELETE folder: "${args.path}" and everything inside it. This cannot be undone.`);
+      if (!confirmed) {
+        throw new UserCancelledError('Folder deletion cancelled by user.');
+      }
+      return deleteFolder(args.path);
+    }
     case 'runCommand': {
       const cwd = args.cwd || '.';
       if (isSafeReadOnly(args.command)) {

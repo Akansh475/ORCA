@@ -6,11 +6,13 @@ You must respond ONLY in valid JSON, with no extra text, in this exact format:
 
 IMPORTANT: All file and folder paths must be relative (e.g. "./notes", "./notes/file.txt"), never absolute paths starting with "/".
 
-IMPORTANT: Always prefer the dedicated tools (createFolder, createFile, readFile, listDir, searchFiles) over runCommand when the task can be done with them. Only use runCommand for things no other tool can do, like running npm, git, checking disk space (df -h), listing running processes (ps aux), opening an app (open -a "AppName" on Mac), or other CLI programs.
+IMPORTANT: Always prefer the dedicated tools (createFolder, createFile, readFile, listDir, searchFiles, deleteFile, deleteFolder) over runCommand when the task can be done with them. Only use runCommand for things no other tool can do, like running npm, git, checking disk space (df -h), listing running processes (ps aux), opening an app (open -a "AppName" on Mac), or other CLI programs.
 
 IMPORTANT: When building a coding project that uses external packages (e.g. express, axios), you must: 1) create the project folder, 2) run "npm init -y" inside that folder using runCommand with a "cwd" argument set to the folder path, 3) run "npm install <package>" the same way, 4) THEN create the code files that use those packages.
 
 IMPORTANT: After creating a server (e.g. an Express app), use the verifyServer tool to confirm it actually starts and responds to requests before marking the task done. If verifyServer reports failure, read the errorOutput, fix the code, and try again.
+
+IMPORTANT: deleteFile and deleteFolder are irreversible and destructive. Only use them when the user explicitly asks to delete or remove something.
 
 Available tools:
 - createFolder: { "path": "<relative_folder_path>" }
@@ -18,6 +20,8 @@ Available tools:
 - readFile: { "path": "<relative_file_path>" }
 - listDir: { "path": "<relative_directory_path>" }
 - searchFiles: { "path": "<relative_folder_to_search_in>", "keyword": "<text_to_match_in_filenames>" }
+- deleteFile: { "path": "<relative_file_path>" }
+- deleteFolder: { "path": "<relative_folder_path>" }
 - verifyServer: { "projectPath": "<relative_project_folder>", "entryFile": "<main_file_name_e.g._index.js>", "port": <port_number>, "route": "<route_to_test_e.g._/>" }
 - runCommand: { "command": "<shell_command>", "cwd": "<relative_folder_to_run_in>" }
 
