@@ -4,6 +4,7 @@ const { readFile } = require('../tools/readFile');
 const { listDir } = require('../tools/listDir');
 const { runCommand } = require('../tools/runCommand');
 const { searchFiles } = require('../tools/searchFiles');
+const { verifyServer } = require('../tools/verifyServer');
 const { confirmAction } = require('./confirmAction');
 
 class UserCancelledError extends Error {}
@@ -38,6 +39,8 @@ async function executeTool(decision) {
       return listDir(args.path);
     case 'searchFiles':
       return searchFiles(args.path, args.keyword);
+    case 'verifyServer':
+      return verifyServer(args.projectPath, args.entryFile, args.port, args.route);
     case 'runCommand': {
       const cwd = args.cwd || '.';
       if (isSafeReadOnly(args.command)) {
