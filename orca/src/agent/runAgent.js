@@ -22,8 +22,10 @@ function extractFirstJSON(text) {
 async function runAgent(instruction) {
   const model = pickModel(instruction);
   const messages = [{ role: 'user', content: instruction }];
-  const MAX_RETRIES = 3;
-  let retries = 0;
+  const MAX_JSON_RETRIES = 3;
+  const MAX_ERROR_RETRIES = 3;
+  let jsonRetries = 0;
+  let errorRetries = 0;
 
   while (true) {
     const rawResponse = await callOllama(model, messages);
@@ -35,8 +37,8 @@ async function runAgent(instruction) {
       if (!jsonText) throw new Error('No JSON object found in response.');
       decision = JSON.parse(jsonText);
     } catch (err) {
-      retries++;
-      if (retries > MAX_RETRIES) {
+      jsonRetries++;
+      if (jsonRetries > MAX_JSON_RETRIES) {
         console.log('Stopped: too many invalid responses from the model.');
         break;
       }
@@ -64,7 +66,16 @@ async function runAgent(instruction) {
         console.log('Stopped:', err.message);
         break;
       }
-      throw err;
+      errorRetries++;
+      if (errorRetries > MAX_ERROR_RETRIES) {
+        console.log('Stopped: too many tool execution errors.');
+        break;
+      }
+      console.log('Tool execution error:', err.message);
+      messages.push({
+        role: 'user',
+        content: `Tool execution failed with error: ${err.message}. Try a different approach or fix the issue.`
+      });
     }
   }
 }

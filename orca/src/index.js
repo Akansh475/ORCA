@@ -1,5 +1,7 @@
 const { runAgent } = require('./agent/runAgent');
-runAgent('Remove the folder called api2');
+runAgent('Read the file at ./blog');
+//runAgent('Run the command: cat /this/path/definitely/does/not/exist123');
+//runAgent('Remove the folder called api2');
 //runAgent('Create a basic Express server in a folder called api3, with a GET route at / that returns Hello World, install dependencies, and verify it actually works');
 // runAgent('Create a basic Express server in a folder called api2, with a GET route at / that returns Hello World, and install dependencies properly');
 // runAgent('Create a basic Express server in a folder called api, with a GET route at / that returns Hello World');
