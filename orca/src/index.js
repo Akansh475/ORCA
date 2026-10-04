@@ -1,6 +1,6 @@
 const { runAgent } = require('./agent/runAgent');
-
-runAgent('Create a file name index.html inside test-orca which present on my desktop inside add basic html form');
+runAgent('Read the file at ./blog/index.html');
+//runAgent('Create a file name index.html inside test-orca which present on my desktop inside add basic html form');
 //runAgent('open spotify');
 //runAgent('Run the command: cat /this/path/definitely/does/not/exist123');
 //runAgent('Remove the folder called api2');
