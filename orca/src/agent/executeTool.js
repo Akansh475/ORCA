@@ -7,6 +7,7 @@ const { searchFiles } = require('../tools/searchFiles');
 const { verifyServer } = require('../tools/verifyServer');
 const { deleteFile } = require('../tools/deleteFile');
 const { deleteFolder } = require('../tools/deleteFolder');
+const { resolvePath } = require('../tools/resolvePath');
 const { confirmAction } = require('./confirmAction');
 
 class UserCancelledError extends Error {}
@@ -18,47 +19,65 @@ function isSafeReadOnly(command) {
   return SAFE_READONLY_PREFIXES.includes(firstWord);
 }
 
+function isOutsideProject(path) {
+  return path.startsWith('/') || path.startsWith('~');
+}
+
 async function executeTool(decision) {
   const { tool, args } = decision;
 
   switch (tool) {
-    case 'createFolder':
-      return createFolder(args.path);
+    case 'createFolder': {
+      if (isOutsideProject(args.path)) {
+        const confirmed = await confirmAction(`ORCA wants to create a folder outside the project, at: "${args.path}".`);
+        if (!confirmed) {
+          throw new UserCancelledError('Folder creation cancelled by user.');
+        }
+      }
+      return createFolder(resolvePath(args.path));
+    }
     case 'createFile': {
-      const result = createFile(args.path, args.content);
+      if (isOutsideProject(args.path)) {
+        const confirmed = await confirmAction(`ORCA wants to create a file outside the project, at: "${args.path}".`);
+        if (!confirmed) {
+          throw new UserCancelledError('File creation cancelled by user.');
+        }
+      }
+      const resolvedPath = resolvePath(args.path);
+      const result = createFile(resolvedPath, args.content);
       if (!result.success && result.message.includes('already exists')) {
         const confirmed = await confirmAction(`ORCA wants to overwrite existing file: "${args.path}".`);
         if (!confirmed) {
           throw new UserCancelledError('Overwrite cancelled by user.');
         }
-        return createFile(args.path, args.content, true);
+        return createFile(resolvedPath, args.content, true);
       }
       return result;
     }
     case 'readFile':
-      return readFile(args.path);
+      return readFile(resolvePath(args.path));
     case 'listDir':
-      return listDir(args.path);
+      return listDir(resolvePath(args.path));
     case 'searchFiles':
-      return searchFiles(args.path, args.keyword);
+      return searchFiles(resolvePath(args.path), args.keyword);
     case 'verifyServer':
-      return verifyServer(args.projectPath, args.entryFile, args.port, args.route);
+      return verifyServer(resolvePath(args.projectPath), args.entryFile, args.port, args.route);
     case 'deleteFile': {
       const confirmed = await confirmAction(`ORCA wants to DELETE file: "${args.path}". This cannot be undone.`);
       if (!confirmed) {
         throw new UserCancelledError('File deletion cancelled by user.');
       }
-      return deleteFile(args.path);
+      return deleteFile(resolvePath(args.path));
     }
     case 'deleteFolder': {
       const confirmed = await confirmAction(`ORCA wants to DELETE folder: "${args.path}" and everything inside it. This cannot be undone.`);
       if (!confirmed) {
         throw new UserCancelledError('Folder deletion cancelled by user.');
       }
-      return deleteFolder(args.path);
+      return deleteFolder(resolvePath(args.path));
     }
     case 'runCommand': {
-      const cwd = args.cwd || '.';
+      const cwd = resolvePath(args.cwd || '.');
       if (isSafeReadOnly(args.command)) {
         return runCommand(args.command, cwd);
       }

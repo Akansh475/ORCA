@@ -1,5 +1,7 @@
 const { runAgent } = require('./agent/runAgent');
-runAgent('Read the file at ./blog');
+
+runAgent('Create a file name index.html inside test-orca which present on my desktop inside add basic html form');
+//runAgent('open spotify');
 //runAgent('Run the command: cat /this/path/definitely/does/not/exist123');
 //runAgent('Remove the folder called api2');
 //runAgent('Create a basic Express server in a folder called api3, with a GET route at / that returns Hello World, install dependencies, and verify it actually works');
