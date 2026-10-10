@@ -58,7 +58,7 @@ async function runAgent(instruction) {
     }
 
     try {
-      const result = await executeTool(decision);
+      const result = await executeTool(decision, { instruction });
       console.log('Result:', result);
       messages.push({ role: 'user', content: `Tool result: ${JSON.stringify(result)}` });
     } catch (err) {

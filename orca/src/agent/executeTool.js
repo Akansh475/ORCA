@@ -24,7 +24,7 @@ function isOutsideProject(path) {
   return path.startsWith('/') || path.startsWith('~');
 }
 
-async function executeTool(decision) {
+async function executeTool(decision, context = {}) {
   const { tool, args } = decision;
 
   switch (tool) {
@@ -45,16 +45,20 @@ async function executeTool(decision) {
         }
       }
       const resolvedPath = resolvePath(args.path);
-      const result = createFile(resolvedPath, args.content);
+      let result = createFile(resolvedPath, args.content);
       if (!result.success && result.message.includes('already exists')) {
         const confirmed = await confirmAction(`ORCA wants to overwrite existing file: "${args.path}".`);
         if (!confirmed) {
           throw new UserCancelledError('Overwrite cancelled by user.');
         }
-        createFile(resolvedPath, args.content, true);
+        result = createFile(resolvedPath, args.content, true);
       }
-      if (resolvedPath.endsWith('.html')) {
-        const reviewSummary = await reviewHtmlFile(resolvedPath, 'qwen2.5-coder:14b');
+      if (result.success && resolvedPath.endsWith('.html')) {
+        const reviewSummary = await reviewHtmlFile(
+          resolvedPath,
+          'qwen2.5-coder:14b',
+          context.instruction || ''
+        );
         return { success: true, message: `File created: ${resolvedPath}. ${reviewSummary}` };
       }
       return result;

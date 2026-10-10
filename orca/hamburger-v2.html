@@ -1,0 +1,84 @@
+<html>
+<head>
+	<title>Hamburger Menu Icons</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+		}
+		.container {
+			display: flex;
+			justify-content: space-around;
+			margin-top: 20px;
+		}
+		.icon {
+			width: 50px;
+			height: 50px;
+			margin-bottom: 20px;
+			background-color: #f7f7f7;
+			border-radius: 10px;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			transition: box-shadow 0.2s ease;
+		}
+		.icon:hover {
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+		}
+		.icon-1 {
+			background-image: linear-gradient(to bottom, #ccc 0%, #ccc 100%);
+			background-position: 100% 100%;
+			background-size: 0% 2px;
+			background-repeat: no-repeat;
+			transition: background-size 0.3s ease;
+			&:hover {
+				background-size: 100% 2px;
+			}
+		}
+		.icon-2 {
+			background-image: linear-gradient(to bottom, #ccc 0%, #ccc 100%);
+			background-position: 100% 100%;
+			background-size: 0% 2px;
+			background-repeat: no-repeat;
+			transition: background-size 0.3s ease;
+			&:hover {
+				background-size: 100% 2px;
+			}
+			&:before {
+				content: '';
+				position: absolute;
+				top: 0;
+				right: -5px;
+				width: 10px;
+				height: 10px;
+				background-color: #f7f7f7;
+				border-radius: 50%;
+				transform: translateX(-5px);
+				transition: transform 0.3s ease;
+			}
+			&:hover:before {
+				transform: translateX(-15px);
+			}
+		}
+		.icon-3 {
+			background-color: #f7f7f7;
+			border: 2px solid #ccc;
+			border-radius: 10px;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			transition: box-shadow 0.2s ease;
+			&:hover {
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+			}
+		}
+		.label {
+			font-size: 12px;
+			color: #666;
+			margin-top: 10px;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="icon icon-1"><label class="label">Classic 3-line</label></div>
+		<div class="icon icon-2"><label class="label">Animated X on hover</label></div>
+		<div class="icon icon-3"><label class="label">Rounded bars</label></div>
+	</div>
+</body>
+</html>
