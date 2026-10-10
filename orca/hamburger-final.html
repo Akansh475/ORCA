@@ -1,0 +1,107 @@
+<!DOCTYPE html><html><head><title>CSS Hamburger Menu Icons</title><style>
+
+/* Classic 3-line */
+.hamburger-classic {
+  position: relative;
+  display: inline-block;
+}
+.hamburger-classic .bar {
+  position: absolute;
+  display: block;
+  width: 30px;
+  height: 10px;
+  background-color: #333;
+  border-radius: 2px;
+  transition: transform 0.3s;
+}
+.hamburger-classic .bar.top {
+  top: 5px;
+  transform: translateX(10px);
+}
+.hamburger-classic .bar.middle {
+  top: 20px;
+  transform: translateX(10px);
+}
+.hamburger-classic .bar.bottom {
+  top: 35px;
+  transform: translateX(10px);
+}
+
+/* Animated X on hover */
+.hamburger-animated {
+  position: relative;
+  display: inline-block;
+}
+.hamburger-animated .bar {
+  position: absolute;
+  display: block;
+  width: 30px;
+  height: 10px;
+  background-color: #333;
+  border-radius: 2px;
+  transition: transform 0.3s;
+}
+.hamburger-animated .bar.top {
+  top: 5px;
+  transform: rotate(45deg) translateX(-10px);
+}
+.hamburger-animated .bar.middle {
+  top: 20px;
+  transform: rotate(45deg) translateX(-10px);
+}
+.hamburger-animated .bar.bottom {
+  top: 35px;
+  transform: rotate(45deg) translateX(-10px);
+}
+
+/* Rounded bars */
+.hamburger-rounded {
+  position: relative;
+  display: inline-block;
+}
+.hamburger-rounded .bar {
+  position: absolute;
+  display: block;
+  width: 30px;
+  height: 10px;
+  background-color: #333;
+  border-radius: 10px;
+  transition: transform 0.3s;
+}
+.hamburger-rounded .bar.top {
+  top: 5px;
+  transform: rotate(45deg) translateX(-10px);
+}
+.hamburger-rounded .bar.middle {
+  top: 20px;
+  transform: rotate(45deg) translateX(-10px);
+}
+.hamburger-rounded .bar.bottom {
+  top: 35px;
+  transform: rotate(45deg) translateX(-10px);
+}
+
+</style></head><body>
+
+<div class="hamburger-classic">
+  <div class="bar top"></div>
+  <div class="bar middle"></div>
+  <div class="bar bottom"></div>
+  <span style="display: none;">Classic 3-line</span>
+</div>
+
+<div class="hamburger-animated">
+  <div class="bar top"></div>
+  <div class="bar middle"></div>
+  <div class="bar bottom"></div>
+  <span style="display: none;">Animated X on hover</span>
+</div>
+
+<div class="hamburger-rounded">
+  <div class="bar top"></div>
+  <div class="bar middle"></div>
+  <div class="bar bottom"></div>
+  <span style="display: none;">Rounded bars</span>
+</div>
+
+</body></html>

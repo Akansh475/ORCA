@@ -9,6 +9,7 @@ const { deleteFile } = require('../tools/deleteFile');
 const { deleteFolder } = require('../tools/deleteFolder');
 const { resolvePath } = require('../tools/resolvePath');
 const { confirmAction } = require('./confirmAction');
+const { reviewHtmlFile } = require('./reviewHtmlFile');
 
 class UserCancelledError extends Error {}
 
@@ -50,7 +51,11 @@ async function executeTool(decision) {
         if (!confirmed) {
           throw new UserCancelledError('Overwrite cancelled by user.');
         }
-        return createFile(resolvedPath, args.content, true);
+        createFile(resolvedPath, args.content, true);
+      }
+      if (resolvedPath.endsWith('.html')) {
+        const reviewSummary = await reviewHtmlFile(resolvedPath, 'qwen2.5-coder:14b');
+        return { success: true, message: `File created: ${resolvedPath}. ${reviewSummary}` };
       }
       return result;
     }
