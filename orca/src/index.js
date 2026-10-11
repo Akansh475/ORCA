@@ -1,6 +1,8 @@
-const { runAgent } = require('./agent/runAgent');
+const { checkPage } = require('./tools/checkPage');
 
-runAgent('Create a file at ./hamburger-v2.html with a single HTML page showing 3 different CSS-only hamburger menu icon designs side by side, each with a label underneath describing the style (e.g. "Classic 3-line", "Animated X on hover", "Rounded bars"). Write complete working CSS for every class used.');
+checkPage('./landing.html', { expectHover: true }).then((result) => {
+  console.log(JSON.stringify(result, null, 2));
+});
 //runAgent('Create a file name index.html inside test-orca which present on my desktop inside add basic html form');
 //runAgent('open spotify');
 //runAgent('Run the command: cat /this/path/definitely/does/not/exist123');

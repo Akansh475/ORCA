@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hamburger Menu Icons</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .icon {
+            width: 50px;
+            height: 30px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .bar {
+            height: 4px;
+            background-color: #000;
+        }
+        .classic-3-line .bar {
+            width: 30px;
+        }
+        .animated-x-on-hover .bar {
+            width: 30px;
+            transition: all 0.3s ease;
+        }
+        .animated-x-on-hover:hover .bar:first-child {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+        .animated-x-on-hover:hover .bar:nth-child(2) {
+            opacity: 0;
+        }
+        .animated-x-on-hover:hover .bar:last-child {
+            transform: rotate(-45deg) translate(-6px, 6px);
+        }
+        .rounded-bars .bar {
+            width: 20px;
+            border-radius: 2px;
+        }
+        .label {
+            margin-top: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon classic-3-line">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+        <span class="label">Classic 3-line</span>
+    </div>
+    <div class="container">
+        <div class="icon animated-x-on-hover">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+        <span class="label">Animated X on hover</span>
+    </div>
+    <div class="container">
+        <div class="icon rounded-bars">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+        <span class="label">Rounded bars</span>
+    </div>
+</body>
+</html>

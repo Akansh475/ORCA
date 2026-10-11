@@ -7,12 +7,35 @@ async function callOllama(model, messages) {
     body: JSON.stringify({
       model: model,
       messages: [{ role: 'system', content: systemPrompt }, ...messages],
-      stream: false
+      stream: true,
+      options: { num_ctx: 8192 }
     })
   });
 
-  const data = await response.json();
-  return data.message.content;
+  if (!response.ok) {
+    throw new Error(`Ollama error ${response.status}: ${await response.text()}`);
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let text = '';
+
+  for await (const chunk of response.body) {
+    buffer += decoder.decode(chunk, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const part = JSON.parse(line);
+      if (part.message && part.message.content) text += part.message.content;
+    }
+  }
+  if (buffer.trim()) {
+    const part = JSON.parse(buffer);
+    if (part.message && part.message.content) text += part.message.content;
+  }
+
+  return text;
 }
 
 module.exports = { callOllama };

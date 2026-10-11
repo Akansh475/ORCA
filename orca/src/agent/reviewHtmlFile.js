@@ -17,10 +17,12 @@ Rewrite the COMPLETE file so every measured problem is fixed AND the original re
 Rules:
 - Output ONLY the complete HTML file. No explanation, no markdown code fences.
 - Every label or text the user asked for must stay visible. Never hide it with display: none, font-size: 0, or similar.
-- A container whose children are all position: absolute has no size. Give it an explicit width and height.
+- Every icon or drawing must be DRAWN with real child elements (for example <span> bars) or an inline <svg>. An empty box is not an icon. Each drawn part needs an explicit width and height and a color that contrasts with the box background.
+- When labels go underneath icons, wrap each item like this: <div class="item"><div class="icon">...drawn parts only, no text...</div><span class="label">Label text</span></div>. The label is a sibling of the icon box, never inside it.
+- A container whose children are all position: absolute has no size. Give it an explicit width and height, and position: relative.
 - "Side by side" means a flex row with a gap, and each item must have room for its label.
 - A hover effect needs a real :hover rule. A permanent transform is not a hover effect.
-- A hamburger icon has 3 evenly spaced bars. On hover, the top bar rotates 45deg, the bottom bar rotates -45deg, and the middle bar fades out, which forms an X.
+- A hamburger icon has 3 evenly spaced bars (for example 30px wide and 4px tall, 6px apart). On hover, the top bar rotates 45deg and moves down, the bottom bar rotates -45deg and moves up, and the middle bar fades out, which forms an X.
 - Only use CSS that really exists. Do not invent pseudo-elements.
 `;
 
@@ -69,11 +71,12 @@ function cleanHtml(text) {
 
 async function reviewHtmlFile(filePath, model, originalRequest = '') {
   const expectHover = /hover/i.test(originalRequest);
+  const labelsOutside = /underneath|beneath|below|under each|under the/i.test(originalRequest);
   let fixesApplied = 0;
 
   for (let round = 0; round <= MAX_FIXES; round++) {
     console.log(`Checking page in a real browser (check ${round + 1})...`);
-    const check = await checkPage(filePath, { expectHover });
+    const check = await checkPage(filePath, { expectHover, labelsOutside });
 
     if (!check.success) {
       return `The file was created, but the automatic page check could not run (${check.message}). Treat the file as finished.`;
