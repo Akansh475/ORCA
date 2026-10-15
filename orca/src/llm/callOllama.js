@@ -1,12 +1,14 @@
 const { systemPrompt } = require('./systemPrompt');
 
-async function callOllama(model, messages) {
+async function callOllama(model, messages, extraSystem = '') {
+  const fullSystemPrompt = extraSystem ? `${systemPrompt}\n\n${extraSystem}` : systemPrompt;
+
   const response = await fetch('http://localhost:11434/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: model,
-      messages: [{ role: 'system', content: systemPrompt }, ...messages],
+      messages: [{ role: 'system', content: fullSystemPrompt }, ...messages],
       stream: true,
       options: { num_ctx: 8192 }
     })
