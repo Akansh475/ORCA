@@ -1,6 +1,9 @@
 const { callOllama } = require('../llm/callOllama');
 const { pickModel } = require('../llm/pickModel');
+const { designGuide } = require('../llm/designGuide');
 const { executeTool, UserCancelledError } = require('./executeTool');
+
+const WEB_TASK = /\.html\b|\b(html|css|web\s?page|website|landing page|sign[- ]?(up|in)|login|form|dashboard|navbar|ui)\b/i;
 
 function extractFirstJSON(text) {
   let depth = 0;
@@ -39,8 +42,13 @@ async function runAgent(instruction) {
   let jsonRetries = 0;
   let errorRetries = 0;
 
+  const useDesignGuide = WEB_TASK.test(instruction);
+  if (useDesignGuide) {
+    console.log('Web page task detected: design guide enabled.');
+  }
+
   while (true) {
-    const rawResponse = await callOllama(model, messages);
+    const rawResponse = await callOllama(model, messages, useDesignGuide ? designGuide : '');
 
     const jsonText = extractFirstJSON(rawResponse);
     let decision;
