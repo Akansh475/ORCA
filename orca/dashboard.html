@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sales Analytics Dashboard</title>
+<style>
+:root{--bg:#f9f9f9;--surface:#ffffff;--text:#333333;--muted:#666666;--accent:#2196f3;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+.container{max-width:1100px;margin:0 auto;padding:0 24px;}
+nav{background:var(--surface);box-shadow:0 1px 8px rgba(0,0,0,.06);}
+.nav-inner{display:flex;justify-content:space-between;align-items:center;height:68px;}
+.logo{font-size:1.4rem;font-weight:800;color:var(--accent);}
+.nav-links{display:flex;gap:28px;list-style:none;}
+.nav-links a{color:var(--text);text-decoration:none;font-weight:500;}
+.nav-links a:hover{color:var(--accent);}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--surface);}
+header .title{font-size:1.6rem;margin-right:24px;}
+header .username{font-size:1.2rem;color:var(--muted);}
+.stats{display:flex;gap:24px;margin-bottom:24px;}
+.stat-card{background:var(--surface);padding:16px;border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.07);}
+.stat-card h3{margin-bottom:8px;}
+.stat-card p{color:var(--muted);}
+.chart{width:100%;height:300px;max-width:800px;margin-bottom:24px;}
+table{border-collapse:collapse;width:100%;}
+th,td{border:1px solid #ddd;padding:16px;}
+th{background:var(--surface);}
+.status-badge{display:inline-block;padding:4px 8px;background-color:#4CAF50;border-radius:4px;}
+.status-badge-success{background-color:#4CAF50;}
+.status-badge-danger{background-color:#f44336;}
+.status-badge-info{background-color:#2196f3;}
+.status-badge-warning{background-color:#ffc107;}
+.sidebar{width:250px;height:100vh;position:fixed;left:0;top:0;background:var(--surface);box-shadow:1px 0 8px rgba(0,0,0,.06);}
+.sidebar .logo{display:flex;align-items:center;height:68px;padding:0 24px;font-size:1.4rem;font-weight:800;color:var(--accent);}
+.sidebar .nav-links{display:flex;flex-direction:column;gap:12px;padding:24px;}
+.sidebar .nav-links a{color:var(--text);text-decoration:none;font-weight:500;display:flex;align-items:center;gap:12px;}
+.sidebar .nav-links a:hover{color:var(--accent);}
+.sidebar .nav-links a .icon{width:24px;height:24px;position:relative;}
+.sidebar .nav-links a .icon span{width:24px;height:4px;background:var(--text);display:block;position:absolute;}
+.sidebar .nav-links a .icon span:nth-child(1){top:0;}
+.sidebar .nav-links a .icon span:nth-child(2){top:8px;}
+.sidebar .nav-links a .icon span:nth-child(3){top:16px;}
+.sidebar .nav-links a:hover .icon span:nth-child(1){transform:rotate(45deg) translateY(10px);}
+.sidebar .nav-links a:hover .icon span:nth-child(2){opacity:0;}
+.sidebar .nav-links a:hover .icon span:nth-child(3){transform:rotate(-45deg) translateY(-10px);}
+.main-content{margin-left:250px;padding-top:68px;}
+</style>
+</head>
+<body>
+<div class="sidebar">
+<div class="logo">E-Store</div>
+<ul class="nav-links">
+<li><a href="#"><div class="icon"><span></span><span></span><span></span></div>Home</a></li>
+<li><a href="#"><div class="icon"><span></span><span></span><span></span></div>Analytics</a></li>
+<li><a href="#"><div class="icon"><span></span><span></span><span></span></div>Orders</a></li>
+<li><a href="#"><div class="icon"><span></span><span></span><span></span></div>Customers</a></li>
+<li><a href="#"><div class="icon"><span></span><span></span><span></span></div>Reports</a></li>
+</ul>
+</div>
+<div class="main-content">
+<header><div class="container"><h1 class="title">Sales Analytics Dashboard</h1><p class="username">John Doe (Admin)</p></div></header>
+<div class="container">
+<div class="stats">
+<div class="stat-card">
+<h3>Revenue</h3>
+<p>$120,000</p>
+</div>
+<div class="stat-card">
+<h3>Orders</h3>
+<p>10,500</p>
+</div>
+<div class="stat-card">
+<h3>Customers</h3>
+<p>50,000</p>
+</div>
+<div class="stat-card">
+<h3>Conversion Rate</h3>
+<p>2.5%</p>
+</div>
+</div>
+<div class="chart">
+<svg width="800" height="300">
+<rect x="0" y="0" width="800" height="300" fill="#ccc"/>
+<line x1="10" y1="10" x2="790" y2="290" stroke="#000" stroke-width="2"/>
+<line x1="10" y1="290" x2="790" y2="10" stroke="#000" stroke-width="2"/>
+<circle cx="50" cy="50" r="10" fill="#000"/>
+<circle cx="150" cy="150" r="10" fill="#000"/>
+<circle cx="250" cy="250" r="10" fill="#000"/>
+</svg>
+</div>
+<table>
+<thead>
+<tr>
+<th>Order ID</th>
+<th>Customer Name</th>
+<th>Order Date</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ORD-001</td>
+<td>John Doe</td>
+<td>2023-02-20</td>
+<td class="status-badge status-badge-success">Delivered</td>
+</tr>
+<tr>
+<td>ORD-002</td>
+<td>Jane Doe</td>
+<td>2023-02-21</td>
+<td class="status-badge status-badge-info">Pending</td>
+</tr>
+<tr>
+<td>ORD-003</td>
+<td>Bob Smith</td>
+<td>2023-02-22</td>
+<td class="status-badge status-badge-danger">Cancelled</td>
+</tr>
+<tr>
+<td>ORD-004</td>
+<td>Emily Johnson</td>
+<td>2023-02-23</td>
+<td class="status-badge status-badge-warning">Shipped</td>
+</tr>
+<tr>
+<td>ORD-005</td>
+<td>Michael Brown</td>
+<td>2023-02-24</td>
+<td class="status-badge status-badge-success">Delivered</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</body>
+</html>
