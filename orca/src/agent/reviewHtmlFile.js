@@ -12,7 +12,7 @@ You will receive:
 - CURRENT FILE: the file as it is now
 - PROBLEMS MEASURED IN A REAL BROWSER: facts about what is wrong
 
-Rewrite the COMPLETE file so every measured problem is fixed AND the original request is fully satisfied.
+Rewrite the COMPLETE file so every measured problem is fixed AND the original request is fully satisfied. Keep everything that already works.
 
 Rules:
 - Output ONLY the complete HTML file. No explanation, no markdown code fences.
@@ -23,6 +23,10 @@ Rules:
 - "Side by side" means a flex row with a gap, and each item must have room for its label.
 - A hover effect needs a real :hover rule. A permanent transform is not a hover effect.
 - A hamburger icon has 3 evenly spaced bars (for example 30px wide and 4px tall, 6px apart). On hover, the top bar rotates 45deg and moves down, the bottom bar rotates -45deg and moves up, and the middle bar fades out, which forms an X.
+- Charts must be REAL. A bar chart is a flex container (display:flex; align-items:flex-end; gap:12px; fixed height such as 240px) with one div per data point. Each bar div has a DIFFERENT percentage height (for example height:40%, 65%, 90%), the same width, a solid accent background color and a small label under it. Or use an inline <svg viewBox="0 0 400 200" style="width:100%;height:auto"> with one <rect> per data point. Never use placeholder boxes, X-shaped lines or dots as a chart.
+- Repeated items that should match (stat cards, feature cards, tiles) go in a CSS grid: display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px. This makes them equal width and keeps them inside the container.
+- Nothing may be wider than its container or the page. Use box-sizing:border-box on everything. Give images, svg and canvas max-width:100% and height:auto. Wrap wide tables in a container with overflow-x:auto and give the table width:100%.
+- Text must have strong contrast with its background (at least 4.5:1).
 - Only use CSS that really exists. Do not invent pseudo-elements.
 `;
 
@@ -36,7 +40,8 @@ async function askModel(model, userMessage) {
         { role: 'system', content: fixSystemPrompt },
         { role: 'user', content: userMessage }
       ],
-      stream: true
+      stream: true,
+      options: { num_ctx: 8192 }
     })
   });
 
@@ -71,12 +76,13 @@ function cleanHtml(text) {
 
 async function reviewHtmlFile(filePath, model, originalRequest = '') {
   const expectHover = /hover/i.test(originalRequest);
+  const expectChart = /\b(chart|graph|plot)s?\b/i.test(originalRequest);
   const labelsOutside = /underneath|beneath|below|under each|under the/i.test(originalRequest);
   let fixesApplied = 0;
 
   for (let round = 0; round <= MAX_FIXES; round++) {
     console.log(`Checking page in a real browser (check ${round + 1})...`);
-    const check = await checkPage(filePath, { expectHover, labelsOutside });
+    const check = await checkPage(filePath, { expectHover, expectChart, labelsOutside });
 
     if (!check.success) {
       return `The file was created, but the automatic page check could not run (${check.message}). Treat the file as finished.`;
@@ -88,7 +94,10 @@ async function reviewHtmlFile(filePath, model, originalRequest = '') {
         : 'The file was checked in a real browser and passes all checks. It is finished — no further action needed.';
     }
 
-    console.log(`Found ${check.issues.length} problem(s).`);
+    console.log(`Found ${check.issues.length} problem(s):`);
+    for (const issue of check.issues) {
+      console.log(' -', issue.slice(0, 140));
+    }
 
     if (round === MAX_FIXES) {
       return `After ${fixesApplied} automatic fix attempts the file still has these problems: ${check.issues.join(' ')} Do not try to fix them yourself. Respond with done and tell the user these problems remain.`;

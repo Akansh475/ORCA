@@ -2,6 +2,331 @@ const { chromium } = require('playwright');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
+// Runs inside the browser page. layoutOnly = true runs only the layout checks.
+const runChecks = (opts) => {
+  const { expectHover, expectChart, layoutOnly } = opts;
+  const issues = [];
+  const textBoxes = [];
+  const SKIP = ['SCRIPT', 'STYLE'];
+
+  const describe = (el) => {
+    let d = el.tagName.toLowerCase();
+    if (el.id) d += '#' + el.id;
+    if (el.classList.length) d += '.' + Array.from(el.classList).join('.');
+    return d;
+  };
+
+  const isVisible = (el) => {
+    const r = el.getBoundingClientRect();
+    const cs = getComputedStyle(el);
+    return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden';
+  };
+
+  const all = Array.from(document.body.querySelectorAll('*')).filter(
+    (el) => !SKIP.includes(el.tagName)
+  );
+  // Elements that are not drawing shapes inside an SVG
+  const htmlOnly = all.filter((el) => !(el.closest('svg') && el.tagName.toLowerCase() !== 'svg'));
+  const parents = [document.body, ...htmlOnly];
+
+  const ownTextOf = (el) =>
+    Array.from(el.childNodes)
+      .filter((n) => n.nodeType === 3)
+      .map((n) => n.textContent.trim())
+      .join(' ')
+      .trim();
+
+  if (!layoutOnly) {
+    // Collapsed containers
+    for (const el of htmlOnly) {
+      if (el.children.length === 0) continue;
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.display === 'contents') continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) {
+        issues.push(
+          `Collapsed container: <${describe(el)}> has zero ${r.width === 0 ? 'width' : 'height'} but contains ${el.children.length} child element(s). If its children are position:absolute, give it an explicit width and height.`
+        );
+      }
+    }
+
+    // Hidden text
+    for (const el of all) {
+      const ownText = ownTextOf(el);
+      if (!ownText) continue;
+
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      let reason = null;
+      if (cs.display === 'none') reason = 'display: none';
+      else if (cs.visibility === 'hidden') reason = 'visibility: hidden';
+      else if (parseFloat(cs.fontSize) === 0) reason = 'font-size: 0';
+      else if (parseFloat(cs.opacity) === 0) reason = 'opacity: 0';
+      else if (r.width === 0 || r.height === 0) reason = 'zero size';
+
+      if (reason) {
+        issues.push(`Hidden text: "${ownText.slice(0, 40)}" in <${describe(el)}> is not visible (${reason}).`);
+      }
+    }
+
+    // Overlapping siblings (max 3 reported, nothing inside an SVG)
+    let overlapCount = 0;
+    for (const parent of parents) {
+      if (parent.closest('svg')) continue;
+      const kids = Array.from(parent.children).filter(
+        (k) => !SKIP.includes(k.tagName) && isVisible(k)
+      );
+      for (let i = 0; i < kids.length; i++) {
+        for (let j = i + 1; j < kids.length; j++) {
+          const a = kids[i].getBoundingClientRect();
+          const b = kids[j].getBoundingClientRect();
+          const w = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+          const h = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+          const smaller = Math.min(a.width * a.height, b.width * b.height);
+          if (smaller > 0 && w * h > 0.5 * smaller && overlapCount < 3) {
+            overlapCount++;
+            issues.push(
+              `Overlap: <${describe(kids[i])}> and <${describe(kids[j])}> (siblings inside <${describe(parent)}>) overlap by more than half. They may be piled on top of each other.`
+            );
+          }
+        }
+      }
+    }
+
+    // Hover rules
+    let hoverRules = 0;
+    for (const sheet of document.styleSheets) {
+      try {
+        for (const rule of sheet.cssRules) {
+          if (rule.selectorText && rule.selectorText.includes(':hover')) hoverRules++;
+        }
+      } catch (e) {
+        // stylesheet not readable, skip it
+      }
+    }
+    if (expectHover && hoverRules === 0) {
+      issues.push('No :hover rule found, but a hover effect was requested.');
+    }
+  }
+
+  // ---- Layout checks (run at every window width) ----
+
+  // Content running outside the page width
+  const vw = document.documentElement.clientWidth;
+  if (document.documentElement.scrollWidth > vw + 1) {
+    issues.push(
+      `Horizontal scroll: the page is ${document.documentElement.scrollWidth}px wide but the window is ${vw}px. Something is wider than the page.`
+    );
+  }
+  const reported = [];
+  let overflowCount = 0;
+  for (const el of htmlOnly) {
+    if (overflowCount >= 3) break;
+    if (!isVisible(el)) continue;
+    const cs = getComputedStyle(el);
+    if (cs.position === 'fixed') continue;
+    const r = el.getBoundingClientRect();
+    if (r.width <= 1 || r.height <= 1) continue;
+    if (r.right <= vw + 1 && r.left >= -1) continue;
+
+    let skip = false;
+    for (let p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+      const ox = getComputedStyle(p).overflowX;
+      if (reported.includes(p) || ox === 'auto' || ox === 'scroll') {
+        skip = true;
+        break;
+      }
+    }
+    if (skip) continue;
+
+    reported.push(el);
+    overflowCount++;
+    issues.push(
+      `Off-screen content: <${describe(el)}> extends outside the page (left ${Math.round(r.left)}px, right ${Math.round(r.right)}px, page width ${vw}px). All content must fit inside the page width. Use max-width: 100%, box-sizing: border-box, and flex-wrap: wrap or a column layout.`
+    );
+  }
+
+  // Elements wider than their own container (max 3 reported)
+  const TABLE_PARTS = ['TR', 'TD', 'TH', 'TBODY', 'THEAD', 'TFOOT', 'CAPTION', 'COL', 'COLGROUP'];
+  let parentOverflowCount = 0;
+  for (const el of htmlOnly) {
+    if (parentOverflowCount >= 3) break;
+    if (!isVisible(el)) continue;
+    const parent = el.parentElement;
+    if (!parent || parent === document.body || parent === document.documentElement) continue;
+    if (TABLE_PARTS.includes(el.tagName)) continue;
+    const cs = getComputedStyle(el);
+    if (cs.position === 'absolute' || cs.position === 'fixed' || cs.transform !== 'none') continue;
+    const pcs = getComputedStyle(parent);
+    if (pcs.overflowX === 'auto' || pcs.overflowX === 'scroll') continue;
+    if (pcs.display === 'contents' || pcs.display.startsWith('table')) continue;
+    const r = el.getBoundingClientRect();
+    const p = parent.getBoundingClientRect();
+    if (r.width <= 1 || p.width <= 1) continue;
+    if (r.right <= p.right + 4 && r.left >= p.left - 4) continue;
+    if (reported.some((x) => x === el || x.contains(el) || el.contains(x))) continue;
+
+    reported.push(el);
+    parentOverflowCount++;
+    issues.push(
+      `Overflow: <${describe(el)}> is ${Math.round(r.width)}px wide but its container <${describe(parent)}> is only ${Math.round(p.width)}px wide, so it sticks out or gets cut off. Give it max-width: 100% and box-sizing: border-box, or let it wrap.`
+    );
+  }
+
+  // Repeated cards (same tag and class, with content) in one row with very different widths
+  let unevenCount = 0;
+  for (const parent of parents) {
+    if (unevenCount >= 2) break;
+    if (parent.closest('svg')) continue;
+    const kids = Array.from(parent.children).filter(
+      (k) => !SKIP.includes(k.tagName) && isVisible(k)
+    );
+    if (kids.length < 3) continue;
+    const sig = kids[0].tagName + '|' + (kids[0].getAttribute('class') || '');
+    if (!kids.every((k) => k.tagName + '|' + (k.getAttribute('class') || '') === sig)) continue;
+    if (TABLE_PARTS.includes(kids[0].tagName)) continue;
+    if (!kids.every((k) => k.children.length > 0)) continue;
+    const rects = kids.map((k) => k.getBoundingClientRect());
+    if (rects.some((r) => r.width < 60 || r.height < 40)) continue;
+    if (!rects.every((r) => Math.abs(r.top - rects[0].top) < 8)) continue;
+    const widths = rects.map((r) => r.width);
+    const min = Math.min(...widths);
+    const max = Math.max(...widths);
+    if ((max - min) / max > 0.2) {
+      unevenCount++;
+      issues.push(
+        `Uneven items: the ${kids.length} <${describe(kids[0])}> items inside <${describe(parent)}> are meant to match, but their widths range from ${Math.round(min)}px to ${Math.round(max)}px. Make repeated items equal width, for example with display: grid and grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)).`
+      );
+    }
+  }
+
+  if (layoutOnly) return { issues, textBoxes };
+
+  // Chart check: only when the request asks for a chart or graph
+  if (expectChart) {
+    let chartFound = false;
+
+    const groups = {};
+    for (const el of all) {
+      if (!isVisible(el) || el.closest('svg')) continue;
+      const cs = getComputedStyle(el);
+      const hasFill =
+        (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent') ||
+        (cs.backgroundImage && cs.backgroundImage !== 'none');
+      if (!hasFill) continue;
+      const r = el.getBoundingClientRect();
+      const barLikeVertical = r.width >= 8 && r.width <= 200 && r.height >= 4;
+      const barLikeHorizontal = r.height >= 8 && r.height <= 200 && r.width >= 4;
+      if (!barLikeVertical && !barLikeHorizontal) continue;
+      const key = el.tagName + '|' + (el.getAttribute('class') || '');
+      (groups[key] = groups[key] || []).push(r);
+    }
+    for (const key of Object.keys(groups)) {
+      const rects = groups[key];
+      if (rects.length < 3) continue;
+      const widths = rects.map((r) => r.width);
+      const heights = rects.map((r) => r.height);
+      const spreadW = Math.max(...widths) - Math.min(...widths);
+      const spreadH = Math.max(...heights) - Math.min(...heights);
+      const verticalBars =
+        spreadW <= 2 && spreadH >= 8 && rects.every((r) => Math.abs(r.bottom - rects[0].bottom) <= 2);
+      const horizontalBars =
+        spreadH <= 2 && spreadW >= 8 && rects.every((r) => Math.abs(r.left - rects[0].left) <= 2);
+      if (verticalBars || horizontalBars) {
+        chartFound = true;
+        break;
+      }
+    }
+
+    if (!chartFound) {
+      for (const svg of document.body.querySelectorAll('svg')) {
+        const rects = Array.from(svg.querySelectorAll('rect'))
+          .map((n) => n.getBoundingClientRect())
+          .filter((r) => r.width > 2 && r.height > 2);
+        if (rects.length >= 3) {
+          const hs = rects.map((r) => r.height);
+          const ws = rects.map((r) => r.width);
+          if (Math.max(...hs) - Math.min(...hs) >= 8 || Math.max(...ws) - Math.min(...ws) >= 8) {
+            chartFound = true;
+            break;
+          }
+        }
+        const poly = svg.querySelector('polyline, polygon');
+        if (poly && (poly.getAttribute('points') || '').trim().split(/[\s,]+/).length >= 6) {
+          chartFound = true;
+          break;
+        }
+        for (const p of svg.querySelectorAll('path')) {
+          const segs = (p.getAttribute('d') || '').match(/[LlCcQqSsTtAaHhVv]/g) || [];
+          if (segs.length >= 3) {
+            chartFound = true;
+            break;
+          }
+        }
+        if (chartFound) break;
+        if (svg.querySelector('circle[stroke-dasharray]')) {
+          chartFound = true;
+          break;
+        }
+      }
+    }
+
+    if (!chartFound && document.body.querySelector('canvas')) chartFound = true;
+
+    if (!chartFound) {
+      for (const el of all) {
+        if (getComputedStyle(el).backgroundImage.includes('conic-gradient')) {
+          chartFound = true;
+          break;
+        }
+      }
+    }
+
+    if (!chartFound) {
+      issues.push(
+        'Missing chart: the request asks for a chart or graph, but no real chart was found (no set of bars with different heights, no SVG with data shapes, no pie or donut). Build it for real. For a bar chart, use a flex container with align-items: flex-end and one div per data point, each with a different percentage height, a solid accent background, equal width and a label under it.'
+      );
+    }
+  }
+
+  // Collect visible text boxes for the pixel-based contrast check
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const toRGBA = (color) => {
+    ctx.clearRect(0, 0, 1, 1);
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, 1, 1);
+    const d = ctx.getImageData(0, 0, 1, 1).data;
+    return { r: d[0], g: d[1], b: d[2], a: d[3] / 255 };
+  };
+  const effectiveOpacity = (el) => {
+    let o = 1;
+    for (let n = el; n; n = n.parentElement) o *= parseFloat(getComputedStyle(n).opacity);
+    return o;
+  };
+  for (const el of all) {
+    const ownText = ownTextOf(el);
+    if (!ownText || !isVisible(el)) continue;
+    const opacity = effectiveOpacity(el);
+    if (opacity === 0) continue;
+    const r = el.getBoundingClientRect();
+    const c = toRGBA(getComputedStyle(el).color);
+    textBoxes.push({
+      desc: describe(el),
+      text: ownText.slice(0, 40),
+      x: r.left + window.scrollX,
+      y: r.top + window.scrollY,
+      w: r.width,
+      h: r.height,
+      color: { r: c.r, g: c.g, b: c.b, a: c.a * opacity }
+    });
+  }
+
+  return { issues, textBoxes };
+};
+
 async function checkPage(filePath, options = {}) {
   const absolutePath = path.resolve(filePath);
   const browser = await chromium.launch();
@@ -10,179 +335,25 @@ async function checkPage(filePath, options = {}) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     await page.goto(pathToFileURL(absolutePath).href);
 
-    // Part 1: structure checks, plus a list of text boxes to measure later
-    const { issues, textBoxes } = await page.evaluate((expectHover) => {
-      const issues = [];
-      const textBoxes = [];
-      const SKIP = ['SCRIPT', 'STYLE'];
+    // Part 1: full checks at a normal desktop width
+    const wide = await page.evaluate(runChecks, {
+      expectHover: options.expectHover === true,
+      expectChart: options.expectChart === true,
+      layoutOnly: false
+    });
+    const issues = [...wide.issues];
+    const textBoxes = wide.textBoxes;
 
-      const describe = (el) => {
-        let d = el.tagName.toLowerCase();
-        if (el.id) d += '#' + el.id;
-        if (el.classList.length) d += '.' + Array.from(el.classList).join('.');
-        return d;
-      };
-
-      const isVisible = (el) => {
-        const r = el.getBoundingClientRect();
-        const cs = getComputedStyle(el);
-        return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden';
-      };
-
-      const all = Array.from(document.body.querySelectorAll('*')).filter(
-        (el) => !SKIP.includes(el.tagName)
-      );
-
-      const ownTextOf = (el) =>
-        Array.from(el.childNodes)
-          .filter((n) => n.nodeType === 3)
-          .map((n) => n.textContent.trim())
-          .join(' ')
-          .trim();
-
-      // Collapsed containers
-      for (const el of all) {
-        if (el.children.length === 0) continue;
-        const cs = getComputedStyle(el);
-        if (cs.display === 'none' || cs.display === 'contents') continue;
-        const r = el.getBoundingClientRect();
-        if (r.width === 0 || r.height === 0) {
-          issues.push(
-            `Collapsed container: <${describe(el)}> has zero ${r.width === 0 ? 'width' : 'height'} but contains ${el.children.length} child element(s). If its children are position:absolute, give it an explicit width and height.`
-          );
-        }
+    // Part 1b: layout checks again in a narrower window
+    await page.setViewportSize({ width: 1000, height: 800 });
+    const narrow = await page.evaluate(runChecks, { layoutOnly: true });
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const seen = new Set(issues.map((m) => m.slice(0, 35)));
+    for (const msg of narrow.issues) {
+      if (!seen.has(msg.slice(0, 35))) {
+        issues.push(`In a 1000px-wide window: ${msg}`);
       }
-
-      // Hidden text
-      for (const el of all) {
-        const ownText = ownTextOf(el);
-        if (!ownText) continue;
-
-        const cs = getComputedStyle(el);
-        const r = el.getBoundingClientRect();
-        let reason = null;
-        if (cs.display === 'none') reason = 'display: none';
-        else if (cs.visibility === 'hidden') reason = 'visibility: hidden';
-        else if (parseFloat(cs.fontSize) === 0) reason = 'font-size: 0';
-        else if (parseFloat(cs.opacity) === 0) reason = 'opacity: 0';
-        else if (r.width === 0 || r.height === 0) reason = 'zero size';
-
-        if (reason) {
-          issues.push(`Hidden text: "${ownText.slice(0, 40)}" in <${describe(el)}> is not visible (${reason}).`);
-        }
-      }
-
-      // Overlapping siblings (max 3 reported)
-      let overlapCount = 0;
-      const parents = [document.body, ...all];
-      for (const parent of parents) {
-        const kids = Array.from(parent.children).filter(
-          (k) => !SKIP.includes(k.tagName) && isVisible(k)
-        );
-        for (let i = 0; i < kids.length; i++) {
-          for (let j = i + 1; j < kids.length; j++) {
-            const a = kids[i].getBoundingClientRect();
-            const b = kids[j].getBoundingClientRect();
-            const w = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
-            const h = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
-            const smaller = Math.min(a.width * a.height, b.width * b.height);
-            if (smaller > 0 && w * h > 0.5 * smaller && overlapCount < 3) {
-              overlapCount++;
-              issues.push(
-                `Overlap: <${describe(kids[i])}> and <${describe(kids[j])}> (siblings inside <${describe(parent)}>) overlap by more than half. They may be piled on top of each other.`
-              );
-            }
-          }
-        }
-      }
-
-      // Hover rules
-      let hoverRules = 0;
-      for (const sheet of document.styleSheets) {
-        try {
-          for (const rule of sheet.cssRules) {
-            if (rule.selectorText && rule.selectorText.includes(':hover')) hoverRules++;
-          }
-        } catch (e) {
-          // stylesheet not readable, skip it
-        }
-      }
-      if (expectHover && hoverRules === 0) {
-        issues.push('No :hover rule found, but a hover effect was requested.');
-      }
-
-      // Content running outside the page width
-      const vw = document.documentElement.clientWidth;
-      if (document.documentElement.scrollWidth > vw + 1) {
-        issues.push(
-          `Horizontal scroll: the page is ${document.documentElement.scrollWidth}px wide but the window is ${vw}px. Something is wider than the page.`
-        );
-      }
-      const reported = [];
-      let overflowCount = 0;
-      for (const el of all) {
-        if (overflowCount >= 3) break;
-        if (!isVisible(el)) continue;
-        const cs = getComputedStyle(el);
-        if (cs.position === 'fixed') continue;
-        const r = el.getBoundingClientRect();
-        if (r.width <= 1 || r.height <= 1) continue;
-        if (r.right <= vw + 1 && r.left >= -1) continue;
-
-        let skip = false;
-        for (let p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
-          const ox = getComputedStyle(p).overflowX;
-          if (reported.includes(p) || ox === 'auto' || ox === 'scroll') {
-            skip = true;
-            break;
-          }
-        }
-        if (skip) continue;
-
-        reported.push(el);
-        overflowCount++;
-        issues.push(
-          `Off-screen content: <${describe(el)}> extends outside the page (left ${Math.round(r.left)}px, right ${Math.round(r.right)}px, page width ${vw}px). All content must fit inside the page width. Use max-width: 100%, box-sizing: border-box, and flex-wrap: wrap or a column layout.`
-        );
-      }
-
-      // Collect visible text boxes for the pixel-based contrast check
-      const canvas = document.createElement('canvas');
-      canvas.width = 1;
-      canvas.height = 1;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      const toRGBA = (color) => {
-        ctx.clearRect(0, 0, 1, 1);
-        ctx.fillStyle = color;
-        ctx.fillRect(0, 0, 1, 1);
-        const d = ctx.getImageData(0, 0, 1, 1).data;
-        return { r: d[0], g: d[1], b: d[2], a: d[3] / 255 };
-      };
-      const effectiveOpacity = (el) => {
-        let o = 1;
-        for (let n = el; n; n = n.parentElement) o *= parseFloat(getComputedStyle(n).opacity);
-        return o;
-      };
-      for (const el of all) {
-        const ownText = ownTextOf(el);
-        if (!ownText || !isVisible(el)) continue;
-        const opacity = effectiveOpacity(el);
-        if (opacity === 0) continue;
-        const r = el.getBoundingClientRect();
-        const c = toRGBA(getComputedStyle(el).color);
-        textBoxes.push({
-          desc: describe(el),
-          text: ownText.slice(0, 40),
-          x: r.left + window.scrollX,
-          y: r.top + window.scrollY,
-          w: r.width,
-          h: r.height,
-          color: { r: c.r, g: c.g, b: c.b, a: c.a * opacity }
-        });
-      }
-
-      return { issues, textBoxes };
-    }, options.expectHover === true);
+    }
 
     // Part 2: find icon-like boxes
     const candidates = await page.evaluate(() => {

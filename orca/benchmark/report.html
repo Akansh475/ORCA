@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ORCA benchmark report</title>
+<style>
+  body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#f3f4f6;color:#111827;margin:0;padding:32px}
+  h1{margin:0 0 4px}
+  .summary{color:#4b5563;margin-bottom:24px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:24px}
+  .card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  .head{display:flex;justify-content:space-between;align-items:center}
+  h2{margin:0;font-size:1.1rem}
+  .badge{padding:4px 12px;border-radius:999px;font-size:.8rem;font-weight:700;color:#fff}
+  .pass{background:#16a34a}
+  .fail{background:#dc2626}
+  .meta{font-size:.8rem;color:#6b7280;margin:6px 0 12px}
+  img{width:100%;height:340px;object-fit:cover;object-position:top;border:1px solid #e5e7eb;border-radius:8px;display:block}
+  .nofile{height:120px;display:flex;align-items:center;justify-content:center;background:#fee2e2;border-radius:8px;color:#991b1b}
+  ul{font-size:.78rem;color:#374151;padding-left:18px;margin:12px 0 0}
+  li{margin-bottom:6px}
+</style>
+</head>
+<body>
+  <h1>ORCA benchmark report</h1>
+  <div class="summary">1 of 1 pages passed every measured check. Click a screenshot to open the page.</div>
+  <div class="grid">
+    
+      <div class="card">
+        <div class="head">
+          <h2>yoga</h2>
+          <span class="badge pass">PASS</span>
+        </div>
+        <div class="meta">first-draft model: llama3.1 &middot; fix rounds: 0 &middot; 2 min</div>
+        <a href="output/yoga.html" target="_blank"><img src="output/yoga.png" alt="yoga"></a>
+        
+      </div>
+  </div>
+</body>
+</html>

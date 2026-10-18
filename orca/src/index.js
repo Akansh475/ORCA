@@ -1,6 +1,8 @@
+
 const { runAgent } = require('./agent/runAgent');
 
-runAgent('Create a file at ./dashboard.html with a single HTML page: a modern sales analytics dashboard for a fictional online store. Include a left sidebar with a logo and 5 navigation items, a top header with a page title and a user name, a row of 4 stat cards (revenue, orders, customers, conversion rate) with realistic numbers, a bar chart of monthly sales built only with HTML and CSS, and a table of the 5 most recent orders with a colored status badge on each row. Use a light theme with one blue accent color. Write all the CSS in the same file and do not use any external libraries or CDNs.');
+runAgent('play song in spotify')
+//runAgent('Create a file at ./dashboard-v2.html with a single HTML page: a modern sales analytics dashboard for a fictional online store. Include a left sidebar with a logo and 5 navigation items, a top header with a page title and a user name, a row of 4 stat cards (revenue, orders, customers, conversion rate) with realistic numbers, a bar chart of monthly sales built only with HTML and CSS, and a table of the 5 most recent orders with a colored status badge on each row. Use a light theme with one blue accent color. Write all the CSS in the same file and do not use any external libraries or CDNs.');
 //runAgent('Create a file name index.html inside test-orca which present on my desktop inside add basic html form');
 //runAgent('open spotify');
 //runAgent('Run the command: cat /this/path/definitely/does/not/exist123');

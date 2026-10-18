@@ -1,0 +1,11 @@
+[
+  {
+    "id": "yoga",
+    "model": "llama3.1",
+    "fixRounds": 0,
+    "passed": true,
+    "issues": [],
+    "screenshot": true,
+    "minutes": 2
+  }
+]
