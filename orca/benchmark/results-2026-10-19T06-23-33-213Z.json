@@ -1,0 +1,11 @@
+[
+  {
+    "id": "yoga",
+    "model": "qwen2.5-coder:14b",
+    "fixRounds": 0,
+    "passed": true,
+    "issues": [],
+    "screenshot": true,
+    "minutes": 6.4
+  }
+]
